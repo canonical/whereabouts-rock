@@ -10,7 +10,7 @@ jobs:
     name: Build Rocks and Push Arch Specific Images
     uses: canonical/k8s-workflows/.github/workflows/build_rocks.yaml@main
     with:
-      runs-on: "[self-hosted, linux, ARM64, jammy, large]"
+      runs-on: "[self-hosted, Linux, ARM64, jammy, large]"
       owner: ${{ github.repository_owner }}
       trivy-image-config: "trivy.yaml"
       multiarch-awareness: true
