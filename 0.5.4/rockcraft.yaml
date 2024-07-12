@@ -1,0 +1,50 @@
+# Dockerfile: https://github.com/k8snetworkplumbingwg/whereabouts/blob/v0.5.4/Dockerfile
+name: whereabouts
+summary: Whereabouts rock
+description: |
+    A rock containing Whereabouts, an IP Address Management (IPAM) CNI plugin
+    that assigns IP addresses cluster-wide.
+license: Apache-2.0
+version: 0.5.4
+
+base: ubuntu@22.04
+build-base: ubuntu@22.04
+
+platforms:
+  amd64:
+  arm64:
+
+environment:
+  APP_VERSION: 0.5.4
+
+# Services to be loaded by the Pebble entrypoint
+services:
+  install-cni:
+    override: replace
+    startup: enabled
+    command: bash /install-cni.sh
+    on-success: shutdown
+    on-failure: shutdown
+
+parts:
+  build-binary:
+    plugin: nil
+    source: https://github.com/k8snetworkplumbingwg/whereabouts.git
+    source-type: git
+    source-tag: v${CRAFT_PROJECT_VERSION}
+    source-depth: 1
+    build-snaps:
+      - go/1.16/stable
+    build-environment:
+      - GOARCH: $CRAFT_ARCH_BUILD_FOR
+    override-build: |
+      bash -x "hack/build-go.sh"
+      cp bin/* "${CRAFT_PART_INSTALL}/"
+      cp script/install-cni.sh "${CRAFT_PART_INSTALL}/"
+
+  bitnami-compatibility:
+    plugin: nil
+    override-build: |
+      # install-cni.sh requires this folder to exist.
+      mkdir -p "${CRAFT_PART_INSTALL}/bitnami/whereabouts/host"
+      ln -sf /bitnami/whereabouts/host "${CRAFT_PART_INSTALL}/host"
