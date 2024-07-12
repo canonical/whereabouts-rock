@@ -17,6 +17,15 @@ platforms:
 environment:
   APP_VERSION: 0.6.3
 
+# Services to be loaded by the Pebble entrypoint
+services:
+  install-cni:
+    override: replace
+    startup: enabled
+    command: bash /install-cni.sh
+    on-success: shutdown
+    on-failure: shutdown
+
 parts:
   build-binary:
     plugin: nil
@@ -32,12 +41,3 @@ parts:
       bash -x "hack/build-go.sh"
       cp bin/* "${CRAFT_PART_INSTALL}/"
       cp script/install-cni.sh "${CRAFT_PART_INSTALL}/"
-
-# Services to be loaded by the Pebble entrypoint
-services:
-  install-cni:
-    override: replace
-    startup: enabled
-    command: bash /install-cni.sh
-    on-success: shutdown
-    on-failure: shutdown
