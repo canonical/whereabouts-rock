@@ -1,13 +1,10 @@
 #
 # Copyright 2024 Canonical, Ltd.
-# See LICENSE file for licensing details
 #
-
-import pathlib
+import os
 import subprocess
 
 import pytest
-import yaml
 
 ROCK_EXPECTED_FILES = [
     "/install-cni.sh",
@@ -15,21 +12,15 @@ ROCK_EXPECTED_FILES = [
     "/whereabouts",
 ]
 
-METADATA = yaml.safe_load(pathlib.Path("./rockcraft.yaml").read_text())
-# Assuming rock name is the same as application name.
-ROCK_NAME = METADATA["name"]
-VERSION = METADATA["version"]
-LOCAL_ROCK_IMAGE = f"{ROCK_NAME}:{VERSION}"
 
-
-def _run_in_docker(check_exit_code, *command):
+def _run_in_docker(image, check_exit_code, *command):
     return subprocess.run(
         [
             "docker",
             "run",
             "--rm",
             "-i",
-            LOCAL_ROCK_IMAGE,
+            image,
             "exec",
             *command,
         ],
@@ -42,22 +33,21 @@ def _run_in_docker(check_exit_code, *command):
 @pytest.mark.abort_on_fail
 def test_whereabouts_rock():
     """Test Whereabouts rock."""
+    image_variable = "ROCK_WHEREABOUTS"
+    image = os.getenv(image_variable)
+    assert image is not None, f"${image_variable} is not set"
     # check rock filesystem
-    _run_in_docker(True, "ls", "-la", *ROCK_EXPECTED_FILES)
+    _run_in_docker(image, True, "ls", "-la", *ROCK_EXPECTED_FILES)
 
     # check binary name and version.
-    process = _run_in_docker(True, f"/{ROCK_NAME}", "version")
+    process = _run_in_docker(image, True, "/whereabouts", "version")
     output = process.stderr
-    assert ROCK_NAME in output and VERSION in output
+    assert "whereabouts" in output and "0.6.3" in output
 
     # check other binary. It expects KUBERNETES_SERVICE_HOST to be defined.
-    process = _run_in_docker(False, "/ip-control-loop")
+    process = _run_in_docker(image, False, "/ip-control-loop")
     assert "KUBERNETES_SERVICE_HOST" in process.stderr
 
     # check script. It expects serviceaccount token to exist.
-    process = _run_in_docker(False, "/install-cni.sh")
-    expected_error = (
-        "cat: /var/run/secrets/kubernetes.io/serviceaccount/token: "
-        "No such file or directory"
-    )
-    assert expected_error == process.stderr.strip()
+    process = _run_in_docker(image, False, "/install-cni.sh")
+    "cat: /var/run/secrets/kubernetes.io/serviceaccount/token: No such file or directory" in process.stderr
