@@ -7,6 +7,7 @@ import subprocess
 import pytest
 
 ROCK_EXPECTED_FILES = [
+    "/host",
     "/install-cni.sh",
     "/ip-control-loop",
     "/whereabouts",

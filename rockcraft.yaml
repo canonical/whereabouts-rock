@@ -41,3 +41,10 @@ parts:
       bash -x "hack/build-go.sh"
       cp bin/* "${CRAFT_PART_INSTALL}/"
       cp script/install-cni.sh "${CRAFT_PART_INSTALL}/"
+
+  bitnami-compatibility:
+    plugin: nil
+    override-build: |
+      # install-cni.sh requires this folder to exist.
+      mkdir -p "${CRAFT_PART_INSTALL}/bitnami/whereabouts/host"
+      ln -sf /bitnami/whereabouts/host "${CRAFT_PART_INSTALL}/host"
