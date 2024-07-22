@@ -25,7 +25,7 @@ def _get_whereabouts_helm_cmd():
     parts = rock_image.split("/")
     if len(parts) > 1:
         registry = parts[0]
-        rock_image = parts[1]
+        rock_image = "/".join(parts[1:])
 
     images = [
         k8s_util.HelmImage(rock_image),
